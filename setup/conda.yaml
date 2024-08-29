@@ -9,8 +9,8 @@ dependencies:
   - pip
   - pip:
     - numpy==1.19.5
-    - torch==1.7.1
-    - torchvision==0.8.2
+    - torch==1.13.1 
+    - torchvision==0.14.1
     - pillow==6.2.0
     - termcolor
     - imageio
