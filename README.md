@@ -91,14 +91,17 @@ for the SODA method and the DMControl Generalization Benchmark.
 
 
 ## Setup
-We assume that you have access to a GPU with CUDA >=9.2 support. All dependencies can then be installed with the following commands:
+First install mujoco dependency:
+1. Download old version of [mujoco](https://www.roboti.us/download.html) and paste it in your home .mujoco folder
+2. Download free mujoco [license](https://www.roboti.us/license.html) and paste it in your home .mujoco folder
+
+Then, we assume that you have access to a GPU with CUDA >=9.2 support. All dependencies can then be installed with the following commands:
 
 ```
 conda env create -f setup/conda.yaml
 conda activate dmcgb
 sh setup/install_envs.sh
 ```
-
 
 ## Datasets
 Part of this repository relies on external datasets. SODA uses the [Places](http://places2.csail.mit.edu/download.html) dataset for data augmentation, which can be downloaded by running
