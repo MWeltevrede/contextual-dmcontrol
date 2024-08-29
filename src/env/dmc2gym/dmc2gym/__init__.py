@@ -34,31 +34,30 @@ def make(
     time_limit = 1e6
 
     if not env_id in gym.envs.registry.env_specs:
-        task_kwargs = {}
-        if seed is not None:
-            task_kwargs['random'] = seed
-        if time_limit is not None:
-            task_kwargs['time_limit'] = time_limit
         register(
             id=env_id,
             entry_point='dmc2gym.wrappers:DMCWrapper',
-            kwargs=dict(
-                domain_name=domain_name,
-                task_name=task_name,
-                task_kwargs=task_kwargs,
-                environment_kwargs=environment_kwargs,
-                setting_kwargs=setting_kwargs,
-                visualize_reward=visualize_reward,
-                from_pixels=from_pixels,
-                height=height,
-                width=width,
-                camera_id=camera_id,
-                frame_skip=frame_skip,
-                is_distracting_cs=is_distracting_cs,
-                distracting_cs_intensity=distracting_cs_intensity,
-                background_dataset_paths=background_dataset_paths,
-                channels_first=channels_first,
-            ),
-            max_episode_steps=max_episode_steps,
-        )
-    return gym.make(env_id)
+            max_episode_steps=max_episode_steps,)
+        
+    task_kwargs = {}
+    if seed is not None:
+        task_kwargs['random'] = seed
+    if time_limit is not None:
+        task_kwargs['time_limit'] = time_limit
+
+    return gym.make(env_id, 
+                    domain_name=domain_name,
+                    task_name=task_name,
+                    task_kwargs=task_kwargs,
+                    environment_kwargs=environment_kwargs,
+                    setting_kwargs=setting_kwargs,
+                    visualize_reward=visualize_reward,
+                    from_pixels=from_pixels,
+                    height=height,
+                    width=width,
+                    camera_id=camera_id,
+                    frame_skip=frame_skip,
+                    is_distracting_cs=is_distracting_cs,
+                    distracting_cs_intensity=distracting_cs_intensity,
+                    background_dataset_paths=background_dataset_paths,
+                    channels_first=channels_first,)
