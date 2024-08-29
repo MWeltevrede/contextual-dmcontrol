@@ -20,3 +20,4 @@ dependencies:
     - tqdm
     - einops
     - kornia
+    - pyvirtualdisplay==3.0

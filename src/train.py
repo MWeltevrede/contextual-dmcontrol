@@ -9,6 +9,7 @@ from env.wrappers import make_env
 from algorithms.factory import make_agent
 from logger import Logger
 from video import VideoRecorder
+from pyvirtualdisplay import Display
 
 
 def evaluate(env, agent, video, num_episodes, L, step, test_env=False):
@@ -40,6 +41,7 @@ def main(args):
 
 	# Initialize environments
 	gym.logger.set_level(40)
+	print("before making envs")
 	env = make_env(
 		domain_name=args.domain_name,
 		task_name=args.task_name,
@@ -59,7 +61,7 @@ def main(args):
 		mode=args.eval_mode,
 		intensity=args.distracting_cs_intensity
 	) if args.eval_mode is not None else None
-
+	print("after making envs")
 	# Create working directory
 	work_dir = os.path.join(args.log_dir, args.domain_name+'_'+args.task_name, args.algorithm, str(args.seed))
 	print('Working directory:', work_dir)
@@ -147,4 +149,5 @@ def main(args):
 
 if __name__ == '__main__':
 	args = parse_args()
-	main(args)
+	with Display() as disp:
+		main(args)

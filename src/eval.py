@@ -11,6 +11,7 @@ from env.wrappers import make_env
 from algorithms.factory import make_agent
 from video import VideoRecorder
 import augmentations
+from pyvirtualdisplay import Display
 
 
 def evaluate(env, agent, video, num_episodes, eval_mode, adapt=False):
@@ -114,4 +115,5 @@ def main(args):
 
 if __name__ == '__main__':
 	args = parse_args()
-	main(args)
+	with Display() as disp:
+		main(args)
