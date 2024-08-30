@@ -1,7 +1,10 @@
 from gym import core, spaces
+import gym
 from dm_control import suite
 from dm_env import specs
+import dm_env
 import numpy as np
+import random
 
 
 def _spec_to_box(spec):
@@ -32,6 +35,61 @@ def _flatten_obs(obs):
         flat = np.array([v]) if np.isscalar(v) else v.ravel()
         obs_pieces.append(flat)
     return np.concatenate(obs_pieces, axis=0)
+
+class ContextualDMCWrapper(gym.Wrapper):
+    """Wrapper for initialising DMC with a set of physics states"""
+    def __init__(self, env, physics_states, seed=0):
+        gym.Wrapper.__init__(self, env)
+
+        self._num_physics_states = len(physics_states)
+        if self._num_physics_states > 0:
+            self._physics_states = physics_states
+            self._i = 0
+            self._max_episode_steps = env._max_episode_steps
+
+            # shuffle the order in which we encounter physics states 
+            random.seed(seed)
+            self._randomised_state_indices = np.arange(self._num_physics_states)
+            random.shuffle(self._randomised_state_indices)
+
+        assert isinstance(self._get_dmc_wrapper(), DMCWrapper), 'wrapped env must be a DMCWrapper'
+
+    def _get_dmc_wrapper(self):
+        _env = self.env
+        while not isinstance(_env, DMCWrapper) and hasattr(_env, 'env'):
+            _env = _env.env
+        assert isinstance(_env, DMCWrapper), 'environment is not dmc2gym-wrapped'
+
+        return _env
+
+    def reset(self):
+        if self._num_physics_states > 0:
+            # reset environment to reset timestep counters and other things
+            self.env.reset()
+
+            dmc_env = self._get_dmc_wrapper()
+
+            # change the physics engine's state
+            new_physics_state = self._physics_states[self._randomised_state_indices[self._i]]
+            physics_engine = dmc_env._env._physics
+            physics_engine.set_state(new_physics_state)
+            physics_engine.after_reset()
+
+            # set correct Mujoco state and generate observation
+            time_step = dm_env.TimeStep(
+                dm_env.StepType.FIRST, 
+                None, 
+                None, 
+                dmc_env._env._task.get_observation(physics_engine)
+            )
+            dmc_env.current_state = _flatten_obs(time_step.observation)
+            obs = dmc_env._get_obs(time_step)
+
+            self._i = (self._i + 1) % self._num_physics_states
+            return obs
+        else:
+            # fall back to normal DMC behaviour
+            return self.env.reset()
 
 
 class DMCWrapper(core.Env):
