@@ -10,6 +10,7 @@ from algorithms.factory import make_agent
 from logger import Logger
 from video import VideoRecorder
 from pyvirtualdisplay import Display
+import wandb
 
 
 def evaluate(env, agent, video, num_episodes, L, step, test_env=False):
@@ -150,5 +151,12 @@ def main(args):
 
 if __name__ == '__main__':
 	args = parse_args()
-	with Display() as disp:
-		main(args)
+	with open("wandb_info.txt") as file:
+		lines = [line.rstrip() for line in file]
+		os.environ["WANDB_API_KEY"] = lines[0]
+		os.environ["WANDB_START_METHOD"] = "thread"
+		wandb_project = "ContextualDMC"
+	
+	with wandb.init(project=wandb_project, entity=lines[1], config=vars(args), tags=[args.algorithm, args.domain_name, args.task_name]):
+		with Display() as disp:
+			main(args)

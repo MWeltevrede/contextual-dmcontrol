@@ -21,3 +21,4 @@ dependencies:
     - einops
     - kornia
     - pyvirtualdisplay==3.0
+    - wandb

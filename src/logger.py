@@ -3,6 +3,7 @@ import json
 import os
 import torch
 from termcolor import colored
+import wandb
 
 FORMAT_CONFIG = {
     'rl': {
@@ -31,10 +32,11 @@ class AverageMeter(object):
 
 
 class MetersGroup(object):
-    def __init__(self, file_name, formating):
+    def __init__(self, file_name, formating, use_wandb=True):
         self._file_name = file_name
         self._formating = formating
         self._meters = defaultdict(AverageMeter)
+        self._use_wandb = use_wandb
 
     def log(self, key, value, n=1):
         self._meters[key].update(value, n)
@@ -74,6 +76,10 @@ class MetersGroup(object):
             pieces.append(self._format(disp_key, value, ty))
         print('| %s' % (' | '.join(pieces)))
 
+    def _dump_to_wandb(self, data, step, prefix):
+        data = {prefix + '/' + key: val for key, val in data.items()}
+        wandb.log(data, step)
+
     def dump(self, step, prefix):
         if len(self._meters) == 0:
             return
@@ -81,12 +87,15 @@ class MetersGroup(object):
         data['step'] = step
         self._dump_to_file(data)
         self._dump_to_console(data, prefix)
+        if self._use_wandb:
+            self._dump_to_wandb(data, step, prefix)
         self._meters.clear()
 
 
 class Logger(object):
     def __init__(self, log_dir, config='rl'):
         self._log_dir = log_dir
+
         self._train_mg = MetersGroup(
             os.path.join(log_dir, 'train.log'),
             formating=FORMAT_CONFIG[config]['train']
