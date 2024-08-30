@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.random import randint
+import random
 import os
 import gym
 import torch
@@ -18,21 +19,13 @@ def make_env(
 		frame_stack=3,
 		action_repeat=4,
 		image_size=100,
-		mode='train',
+		states = [],
+		video_paths = [],
+		colors = [],
 		intensity=0.
 	):
 	"""Make environment for experiments"""
-	assert mode in {'train', 'color_easy', 'color_hard', 'video_easy', 'video_hard', 'distracting_cs'}, \
-		f'specified mode "{mode}" is not supported'
-
 	paths = []
-	is_distracting_cs = mode == 'distracting_cs'
-	if is_distracting_cs:
-		import env.distracting_control.suite as dc_suite
-		loaded_paths = [os.path.join(dir_path, 'DAVIS/JPEGImages/480p') for dir_path in utils.load_config('datasets')]
-		for path in loaded_paths:
-			if os.path.exists(path):
-				paths.append(path)
 	env = dmc2gym.make(
 		domain_name=domain_name,
 		task_name=task_name,
@@ -43,64 +36,74 @@ def make_env(
 		width=image_size,
 		episode_length=episode_length,
 		frame_skip=action_repeat,
-		is_distracting_cs=is_distracting_cs,
+		is_distracting_cs=False,
 		distracting_cs_intensity=intensity,
 		background_dataset_paths=paths
 	)
-	if not is_distracting_cs:
-		env = VideoWrapper(env, mode, seed)
+	env = dmc2gym.wrappers.ContextualDMCWrapper(env, states, seed=seed)
+	env = VideoWrapper(env, video_paths, seed=seed)
 	env = FrameStack(env, frame_stack)
-	if not is_distracting_cs:
-		env = ColorWrapper(env, mode, seed)
+	env = ColorWrapper(env, colors, seed=seed)
 
 	return env
 
 
 class ColorWrapper(gym.Wrapper):
 	"""Wrapper for the color experiments"""
-	def __init__(self, env, mode, seed=None):
+	def __init__(self, env, colors, seed=None):
 		assert isinstance(env, FrameStack), 'wrapped env must be a framestack'
 		gym.Wrapper.__init__(self, env)
+		assert isinstance(self._get_video_wrapper(), VideoWrapper), 'wrapped env must be a VideoWrapper'
+		assert isinstance(self._get_contextual_dmc_wrapper(), dmc2gym.wrappers.ContextualDMCWrapper), 'wrapped env must be a ContextualDMCWrapper'
 		self._max_episode_steps = env._max_episode_steps
-		self._mode = mode
-		self._random_state = np.random.RandomState(seed)
+		self._colors = colors
+		self._num_colors = len(colors)
 		self.time_step = 0
-		if 'color' in self._mode:
-			self._load_colors()
+
+		if self._num_colors > 0:
+			cdmc_env = self._get_contextual_dmc_wrapper()
+			video_env = self._get_video_wrapper()
+			if cdmc_env._num_physics_states > 0:
+				assert cdmc_env._num_physics_states == self._num_colors, 'number of physics states and colours must match'
+				self._randomised_color_indices = cdmc_env._randomised_state_indices
+			elif video_env._num_videos > 0:
+				assert video_env._num_videos == self._num_colors, 'number of videos and colours must match'
+				self._randomised_color_indices = video_env._randomised_video_indices
+			else:
+				# shuffle the order in which we encounter colors
+				random.seed(seed)
+				self._randomised_color_indices = np.arange(self._num_colors)
+				random.shuffle(self._randomised_color_indices)
+			
+			self._i = 0
+
 
 	def reset(self):
 		self.time_step = 0
-		if 'color' in self._mode:
-			self.randomize()
-		elif 'video' in self._mode:
+		setting_kwargs = {}
+		if self._num_colors > 0:
+			setting_kwargs.update(self._colors[self._randomised_color_indices[self._i]])
+			self._i = (self._i + 1) % self._num_colors
+		if self._get_video_wrapper()._num_videos > 0:
 			# apply greenscreen
-			setting_kwargs = {
+			setting_kwargs.update({
 				'skybox_rgb': [.2, .8, .2],
 				'skybox_rgb2': [.2, .8, .2],
 				'skybox_markrgb': [.2, .8, .2]
-			}
-			if self._mode == 'video_hard':
-				setting_kwargs['grid_rgb1'] = [.2, .8, .2]
-				setting_kwargs['grid_rgb2'] = [.2, .8, .2]
-				setting_kwargs['grid_markrgb'] = [.2, .8, .2]
-			self.reload_physics(setting_kwargs)
+			})
+
+			# # Hard video mode
+			# setting_kwargs['grid_rgb1'] = [.2, .8, .2]
+			# setting_kwargs['grid_rgb2'] = [.2, .8, .2]
+			# setting_kwargs['grid_markrgb'] = [.2, .8, .2]
+
+
+		self.reload_physics(setting_kwargs)
 		return self.env.reset()
 
 	def step(self, action):
 		self.time_step += 1
 		return self.env.step(action)
-
-	def randomize(self):
-		assert 'color' in self._mode, f'can only randomize in color mode, received {self._mode}'
-		self.reload_physics(self.get_random_color())
-
-	def _load_colors(self):
-		assert self._mode in {'color_easy', 'color_hard'}
-		self._colors = torch.load(f'src/env/data/{self._mode}.pt')
-
-	def get_random_color(self):
-		assert len(self._colors) >= 100, 'env must include at least 100 colors'
-		return self._colors[self._random_state.randint(len(self._colors))]
 
 	def reload_physics(self, setting_kwargs=None, state=None):
 		from dm_control.suite import common
@@ -127,6 +130,22 @@ class ColorWrapper(gym.Wrapper):
 		while not isinstance(_env, dmc2gym.wrappers.DMCWrapper) and hasattr(_env, 'env'):
 			_env = _env.env
 		assert isinstance(_env, dmc2gym.wrappers.DMCWrapper), 'environment is not dmc2gym-wrapped'
+
+		return _env
+	
+	def _get_contextual_dmc_wrapper(self):
+		_env = self.env
+		while not isinstance(_env, dmc2gym.wrappers.ContextualDMCWrapper) and hasattr(_env, 'env'):
+			_env = _env.env
+		assert isinstance(_env, dmc2gym.wrappers.ContextualDMCWrapper), 'environment is not contextual dmc2gym-wrapped'
+
+		return _env
+	
+	def _get_video_wrapper(self):
+		_env = self.env
+		while not isinstance(_env, VideoWrapper) and hasattr(_env, 'env'):
+			_env = _env.env
+		assert isinstance(_env, VideoWrapper), 'environment is not video wrapped'
 
 		return _env
 
@@ -237,26 +256,41 @@ def do_green_screen(x, bg):
 
 class VideoWrapper(gym.Wrapper):
 	"""Green screen for video experiments"""
-	def __init__(self, env, mode, seed):
+	def __init__(self, env, videos, seed=0):
 		gym.Wrapper.__init__(self, env)
-		self._mode = mode
-		self._seed = seed
-		self._random_state = np.random.RandomState(seed)
-		self._index = 0
-		self._video_paths = []
-		if 'video' in mode:
-			self._get_video_paths()
+		assert isinstance(self._get_contextual_dmc_wrapper(), dmc2gym.wrappers.ContextualDMCWrapper), 'wrapped env must be a ContextualDMCWrapper'
+		self._video_paths = videos
 		self._num_videos = len(self._video_paths)
 		self._max_episode_steps = env._max_episode_steps
 
-	def _get_video_paths(self):
-		video_dir = os.path.join('src/env/data', self._mode)
-		if 'video_easy' in self._mode:
-			self._video_paths = [os.path.join(video_dir, f'video{i}.mp4') for i in range(10)]
-		elif 'video_hard' in self._mode:
-			self._video_paths = [os.path.join(video_dir, f'video{i}.mp4') for i in range(100)]
-		else:
-			raise ValueError(f'received unknown mode "{self._mode}"')
+		if self._num_videos > 0:
+			cdmc_env = self._get_contextual_dmc_wrapper()
+			if cdmc_env._num_physics_states > 0:
+				assert cdmc_env._num_physics_states == self._num_videos, 'number of physics states and colours must match'
+				self._randomised_video_indices = cdmc_env._randomised_state_indices
+			else:
+				# shuffle the order in which we encounter videos
+				random.seed(seed)
+				self._randomised_video_indices = np.arange(self._num_videos)
+				random.shuffle(self._randomised_video_indices)
+			
+			self._i = 0
+
+	def _get_contextual_dmc_wrapper(self):
+		_env = self.env
+		while not isinstance(_env, dmc2gym.wrappers.ContextualDMCWrapper) and hasattr(_env, 'env'):
+			_env = _env.env
+		assert isinstance(_env, dmc2gym.wrappers.ContextualDMCWrapper), 'environment is not contextual dmc2gym-wrapped'
+
+		return _env
+	
+	def _get_dmc_wrapper(self):
+		_env = self.env
+		while not isinstance(_env, dmc2gym.wrappers.DMCWrapper) and hasattr(_env, 'env'):
+			_env = _env.env
+		assert isinstance(_env, dmc2gym.wrappers.DMCWrapper), 'environment is not dmc2gym-wrapped'
+
+		return _env
 
 	def _load_video(self, video):
 		"""Load video from provided filepath and return as numpy array"""
@@ -276,11 +310,11 @@ class VideoWrapper(gym.Wrapper):
 		return np.moveaxis(buf, -1, 1)
 
 	def _reset_video(self):
-		self._index = (self._index + 1) % self._num_videos
-		self._data = self._load_video(self._video_paths[self._index])
+		self._i = (self._i + 1) % self._num_videos
+		self._data = self._load_video(self._video_paths[self._randomised_video_indices[self._i]])
 
 	def reset(self):
-		if 'video' in self._mode:
+		if self._num_videos > 0:
 			self._reset_video()
 		self._current_frame = 0
 		return self._greenscreen(self.env.reset())
@@ -298,7 +332,7 @@ class VideoWrapper(gym.Wrapper):
 
 	def _greenscreen(self, obs):
 		"""Applies greenscreen if video is selected, otherwise does nothing"""
-		if 'video' in self._mode:
+		if self._num_videos > 0:
 			bg = self._data[self._current_frame % len(self._data)] # select frame
 			bg = self._interpolate_bg(bg, obs.shape[1:]) # scale bg to observation size
 			return do_green_screen(obs, bg) # apply greenscreen
