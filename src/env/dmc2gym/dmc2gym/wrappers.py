@@ -40,12 +40,12 @@ class ContextualDMCWrapper(gym.Wrapper):
     """Wrapper for initialising DMC with a set of physics states"""
     def __init__(self, env, physics_states, seed=0):
         gym.Wrapper.__init__(self, env)
+        self._max_episode_steps = env._max_episode_steps
 
         self._num_physics_states = len(physics_states)
         if self._num_physics_states > 0:
             self._physics_states = physics_states
             self._i = 0
-            self._max_episode_steps = env._max_episode_steps
 
             # shuffle the order in which we encounter physics states 
             random.seed(seed)
