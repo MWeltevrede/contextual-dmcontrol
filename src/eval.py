@@ -15,7 +15,7 @@ from pyvirtualdisplay import Display
 import json
 
 
-def evaluate(env, agent, video, num_episodes, eval_mode, adapt=False):
+def evaluate(env, agent, video, num_episodes, video_mode, adapt=False):
 	episode_rewards = []
 	for i in tqdm(range(num_episodes)):
 		if adapt:
@@ -31,13 +31,13 @@ def evaluate(env, agent, video, num_episodes, eval_mode, adapt=False):
 			with utils.eval_mode(ep_agent):
 				action = ep_agent.select_action(obs)
 			next_obs, reward, done, _ = env.step(action)
-			video.record(env, eval_mode)
+			video.record(env, video_mode)
 			episode_reward += reward
 			if adapt:
 				ep_agent.update_inverse_dynamics(*augmentations.prepare_pad_batch(obs, next_obs, action))
 			obs = next_obs
 
-		video.save(f'eval_{eval_mode}_{i}.mp4')
+		video.save(f'eval_{i}.mp4')
 		episode_rewards.append(episode_reward)
 
 	return np.mean(episode_rewards)
@@ -51,6 +51,7 @@ def main(args):
 	gym.logger.set_level(40)
 	with open(args.test_context_file, 'r') as file:
 		contexts = json.load(file)
+	video_mode = len(contexts['video_paths'])>0
 	env = make_env(
 		domain_name=args.domain_name,
 		task_name=args.task_name,
@@ -73,11 +74,8 @@ def main(args):
 	video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
 
 	# Check if evaluation has already been run
-	if args.eval_mode == 'distracting_cs':
-		results_fp = os.path.join(work_dir, args.eval_mode+'_'+str(args.distracting_cs_intensity).replace('.', '_')+'.pt')
-	else:
-		results_fp = os.path.join(work_dir, args.eval_mode+'.pt')
-	assert not os.path.exists(results_fp), f'{args.eval_mode} results already exist for {work_dir}'
+	results_fp = os.path.join(work_dir, 'eval.pt')
+	assert not os.path.exists(results_fp), f'results already exist for {work_dir}'
 
 	# Prepare agent
 	assert torch.cuda.is_available(), 'must have cuda enabled'
@@ -92,8 +90,8 @@ def main(args):
 	agent = torch.load(os.path.join(model_dir, str(args.train_steps)+'.pt'))
 	agent.train(False)
 
-	print(f'\nEvaluating {work_dir} for {args.eval_episodes} episodes (mode: {args.eval_mode})')
-	reward = evaluate(env, agent, video, args.eval_episodes, args.eval_mode)
+	print(f'\nEvaluating {work_dir} for {args.eval_episodes} episodes')
+	reward = evaluate(env, agent, video, args.eval_episodes, video_mode)
 	print('Reward:', int(reward))
 
 	adapt_reward = None
@@ -105,7 +103,7 @@ def main(args):
 			episode_length=args.episode_length,
 			action_repeat=args.action_repeat,
 		)
-		adapt_reward = evaluate(env, agent, video, args.eval_episodes, args.eval_mode, adapt=True)
+		adapt_reward = evaluate(env, agent, video, args.eval_episodes, video_mode, adapt=True)
 		print('Adapt reward:', int(adapt_reward))
 
 	# Save results

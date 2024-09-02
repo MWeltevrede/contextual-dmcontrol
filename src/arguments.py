@@ -11,7 +11,6 @@ def parse_args():
 	parser.add_argument('--frame_stack', default=3, type=int)
 	parser.add_argument('--action_repeat', default=4, type=int)
 	parser.add_argument('--episode_length', default=1000, type=int)
-	parser.add_argument('--eval_mode', default='color_hard', type=str)
 	parser.add_argument('--train_context_file', default=None, type=str)
 	parser.add_argument('--test_context_file', default=None, type=str)
 	
@@ -65,7 +64,6 @@ def parse_args():
 	parser.add_argument('--save_freq', default='100k', type=str)
 	parser.add_argument('--eval_freq', default='25k', type=str)
 	parser.add_argument('--eval_episodes', default=30, type=int)
-	parser.add_argument('--distracting_cs_intensity', default=0., type=float)
 
 	# misc
 	parser.add_argument('--seed', default=None, type=int)
@@ -76,21 +74,15 @@ def parse_args():
 
 	assert args.algorithm in {'sac', 'rad', 'curl', 'pad', 'soda', 'drq', 'svea'}, f'specified algorithm "{args.algorithm}" is not supported'
 
-	assert args.eval_mode in {'train', 'color_easy', 'color_hard', 'video_easy', 'video_hard', 'distracting_cs', 'none'}, f'specified mode "{args.eval_mode}" is not supported'
 	assert args.seed is not None, 'must provide seed for experiment'
 	assert args.train_context_file is not None, 'must provide train context file for experiment'
 	assert args.test_context_file is not None, 'must provide test context file for experiment'
 	assert args.log_dir is not None, 'must provide a log directory for experiment'
 
-	intensities = {0., 0.025, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5}
-	assert args.distracting_cs_intensity in intensities, f'distracting_cs has only been implemented for intensities: {intensities}'
 
 	args.train_steps = int(args.train_steps.replace('k', '000'))
 	args.save_freq = int(args.save_freq.replace('k', '000'))
 	args.eval_freq = int(args.eval_freq.replace('k', '000'))
-
-	if args.eval_mode == 'none':
-		args.eval_mode = None
 
 	if args.algorithm in {'rad', 'curl', 'pad', 'soda'}:
 		args.image_size = 100

@@ -69,7 +69,7 @@ def main(args):
 		states=np.array(test_contexts['states']),
 		video_paths=test_contexts['video_paths'],
 		colors=[dict([(k, np.array(v)) for k,v in color_dict.items()]) for color_dict in test_contexts['colors']],
-	) if args.eval_mode is not None else None
+	)
 	print("after making envs")
 	# Create working directory
 	work_dir = os.path.join(args.log_dir, args.domain_name+'_'+args.task_name, args.algorithm, args.train_context_file[:-5], str(args.seed))
