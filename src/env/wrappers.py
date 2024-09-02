@@ -9,6 +9,7 @@ import torchvision.transforms.functional as TF
 import dmc2gym
 import utils
 from collections import deque
+import dm_control
 
 
 def make_env(
@@ -19,6 +20,7 @@ def make_env(
 		frame_stack=3,
 		action_repeat=4,
 		image_size=100,
+		from_pixels=True,
 		states = [],
 		video_paths = [],
 		colors = [],
@@ -31,7 +33,7 @@ def make_env(
 		task_name=task_name,
 		seed=seed,
 		visualize_reward=False,
-		from_pixels=True,
+		from_pixels=from_pixels,
 		height=image_size,
 		width=image_size,
 		episode_length=episode_length,
@@ -41,9 +43,10 @@ def make_env(
 		background_dataset_paths=paths
 	)
 	env = dmc2gym.wrappers.ContextualDMCWrapper(env, states, seed=seed)
-	env = VideoWrapper(env, video_paths, seed=seed)
-	env = FrameStack(env, frame_stack)
-	env = ColorWrapper(env, colors, seed=seed)
+	if from_pixels:
+		env = VideoWrapper(env, video_paths, seed=seed)
+		env = FrameStack(env, frame_stack)
+		env = ColorWrapper(env, colors, seed=seed)
 
 	return env
 
@@ -92,10 +95,10 @@ class ColorWrapper(gym.Wrapper):
 				'skybox_markrgb': [.2, .8, .2]
 			})
 
-			# # Hard video mode
-			# setting_kwargs['grid_rgb1'] = [.2, .8, .2]
-			# setting_kwargs['grid_rgb2'] = [.2, .8, .2]
-			# setting_kwargs['grid_markrgb'] = [.2, .8, .2]
+			# Hard video mode
+			setting_kwargs['grid_rgb1'] = [.2, .8, .2]
+			setting_kwargs['grid_rgb2'] = [.2, .8, .2]
+			setting_kwargs['grid_markrgb'] = [.2, .8, .2]
 
 
 		self.reload_physics(setting_kwargs)
@@ -112,9 +115,11 @@ class ColorWrapper(gym.Wrapper):
 			setting_kwargs = {}
 		if state is None:
 			state = self._get_state()
+		
+
 		self._reload_physics(
 			*common.settings.get_model_and_assets_from_setting_kwargs(
-				domain_name+'.xml', setting_kwargs
+				domain_name+'.xml', self._get_dmc_wrapper()._task_name, setting_kwargs
 			)
 		)
 		self._set_state(state)
