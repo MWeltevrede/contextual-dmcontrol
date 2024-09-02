@@ -12,6 +12,7 @@ from algorithms.factory import make_agent
 from video import VideoRecorder
 import augmentations
 from pyvirtualdisplay import Display
+import json
 
 
 def evaluate(env, agent, video, num_episodes, eval_mode, adapt=False):
@@ -48,6 +49,8 @@ def main(args):
 
 	# Initialize environments
 	gym.logger.set_level(40)
+	with open(args.test_context_file, 'r') as file:
+		contexts = json.load(file)
 	env = make_env(
 		domain_name=args.domain_name,
 		task_name=args.task_name,
@@ -55,12 +58,14 @@ def main(args):
 		episode_length=args.episode_length,
 		action_repeat=args.action_repeat,
 		image_size=args.image_size,
-		mode=args.eval_mode,
-		intensity=args.distracting_cs_intensity
+		intensity=args.distracting_cs_intensity,
+		states=np.array(contexts['states']),
+		video_paths=contexts['video_paths'],
+		colors=[dict([(k, np.array(v)) for k,v in color_dict.items()]) for color_dict in contexts['colors']],
 	)
 
 	# Set working directory
-	work_dir = os.path.join(args.log_dir, args.domain_name+'_'+args.task_name, args.algorithm, str(args.seed))
+	work_dir = os.path.join(args.log_dir, args.domain_name+'_'+args.task_name, args.algorithm, args.context_file[:-5], str(args.seed))
 	print('Working directory:', work_dir)
 	assert os.path.exists(work_dir), 'specified working directory does not exist'
 	model_dir = utils.make_dir(os.path.join(work_dir, 'model'))
@@ -99,7 +104,6 @@ def main(args):
 			seed=args.seed+42,
 			episode_length=args.episode_length,
 			action_repeat=args.action_repeat,
-			mode=args.eval_mode
 		)
 		adapt_reward = evaluate(env, agent, video, args.eval_episodes, args.eval_mode, adapt=True)
 		print('Adapt reward:', int(adapt_reward))

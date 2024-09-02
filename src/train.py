@@ -4,6 +4,7 @@ import numpy as np
 import gym
 import utils
 import time
+import json
 from arguments import parse_args
 from env.wrappers import make_env
 from algorithms.factory import make_agent
@@ -43,6 +44,10 @@ def main(args):
 	# Initialize environments
 	gym.logger.set_level(40)
 	print("before making envs")
+	with open(args.train_context_file, 'r') as file:
+		train_contexts = json.load(file)
+	with open(args.test_context_file, 'r') as file:
+		test_contexts = json.load(file)
 	env = make_env(
 		domain_name=args.domain_name,
 		task_name=args.task_name,
@@ -50,7 +55,9 @@ def main(args):
 		episode_length=args.episode_length,
 		action_repeat=args.action_repeat,
 		image_size=args.image_size,
-		mode='train'
+		states=np.array(train_contexts['states']),
+		video_paths=train_contexts['video_paths'],
+		colors=[dict([(k, np.array(v)) for k,v in color_dict.items()]) for color_dict in train_contexts['colors']],
 	)
 	test_env = make_env(
 		domain_name=args.domain_name,
@@ -59,12 +66,13 @@ def main(args):
 		episode_length=args.episode_length,
 		action_repeat=args.action_repeat,
 		image_size=args.image_size,
-		mode=args.eval_mode,
-		intensity=args.distracting_cs_intensity
+		states=np.array(test_contexts['states']),
+		video_paths=test_contexts['video_paths'],
+		colors=[dict([(k, np.array(v)) for k,v in color_dict.items()]) for color_dict in test_contexts['colors']],
 	) if args.eval_mode is not None else None
 	print("after making envs")
 	# Create working directory
-	work_dir = os.path.join(args.log_dir, args.domain_name+'_'+args.task_name, args.algorithm, str(args.seed))
+	work_dir = os.path.join(args.log_dir, args.domain_name+'_'+args.task_name, args.algorithm, args.train_context_file[:-5], str(args.seed))
 	print('Working directory:', work_dir)
 	assert not os.path.exists(os.path.join(work_dir, 'train.log')), 'specified working directory already exists'
 	utils.make_dir(work_dir)
@@ -157,6 +165,10 @@ if __name__ == '__main__':
 		os.environ["WANDB_START_METHOD"] = "thread"
 		wandb_project = "ContextualDMC"
 	
-	with wandb.init(project=wandb_project, entity=lines[1], config=vars(args), tags=[args.algorithm, args.domain_name, args.task_name]):
+	args_dict = vars(args)
+	with open(args.train_context_file, 'r') as file:
+		contexts = json.load(file)
+		args_dict['num_contexts'] = max(max(len(contexts['states']), len(contexts['video_paths'])), len(contexts['colors']))
+	with wandb.init(project=wandb_project, entity=lines[1], config=args_dict, tags=[args.algorithm, args.domain_name, args.task_name]):
 		with Display() as disp:
 			main(args)
