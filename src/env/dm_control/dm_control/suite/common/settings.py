@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from dm_control.suite import common
+import dm_control
 from dm_control.utils import io as resources
 import xmltodict
 
@@ -11,17 +12,32 @@ _FILENAMES = [
     "./common/visual.xml",
 ]
 
-
-def get_model_and_assets_from_setting_kwargs(model_fname, setting_kwargs=None):
+def get_model_and_assets_from_setting_kwargs(model_fname, task_name, setting_kwargs=None):
     """"Returns a tuple containing the model XML string and a dict of assets."""
     assets = {filename: resources.GetResource(os.path.join(_SUITE_DIR, filename))
           for filename in _FILENAMES}
+    
+    if model_fname == "manipulator.xml":
+        use_peg = True
+        insert = False
+        if "ball" in task_name:
+            use_peg = False
+        if "insert" in task_name:
+            insert = True
+        model_xml, _ = dm_control.suite.manipulator.make_model(use_peg, insert)
+    elif model_fname == "stacker.xml":
+        num_boxes = 2
+        if "4" in task_name:
+            num_boxes = 4
+        model_xml, _ = dm_control.suite.stacker.make_model(num_boxes)
+    else:
+        model_xml = common.read_model(model_fname)
 
     if setting_kwargs is None:
-        return common.read_model(model_fname), assets
+        return model_xml, assets
 
     # Convert XML to dicts
-    model = xmltodict.parse(common.read_model(model_fname))
+    model = xmltodict.parse(model_xml)
     materials = xmltodict.parse(assets['./common/materials.xml'])
     skybox = xmltodict.parse(assets['./common/skybox.xml'])
 
