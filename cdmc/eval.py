@@ -6,10 +6,10 @@ import gym
 import cdmc.utils as utils
 from copy import deepcopy
 from tqdm import tqdm
-from cdmc.arguments  import parse_args
+from cdmc.arguments import parse_args
 from env.wrappers import make_env
 from algorithms.factory import make_agent
-from cdmc.video  import VideoRecorder
+from cdmc.video import VideoRecorder
 import cdmc.augmentations as augmentations
 from pyvirtualdisplay import Display
 import json

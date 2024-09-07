@@ -5,11 +5,11 @@ import gym
 import cdmc.utils as utils
 import time
 import json
-from cdmc.arguments  import parse_args
+from cdmc.arguments import parse_args
 from env.wrappers import make_env
 from algorithms.factory import make_agent
-from cdmc.logger  import Logger
-from cdmc.video  import VideoRecorder
+from cdmc.logger import Logger
+from cdmc.video import VideoRecorder
 from pyvirtualdisplay import Display
 import wandb
 
