@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
 import dmc2gym
-import utils
+import cdmc.utils as utils
 from collections import deque
 import dm_control
 

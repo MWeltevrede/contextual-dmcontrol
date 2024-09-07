@@ -3,10 +3,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from copy import deepcopy
-import utils
+import cdmc.utils as utils
 import algorithms.modules as m
 from algorithms.sac import SAC
-import augmentations
+import cdmc.augmentations as augmentations
 
 
 class SODA(SAC):

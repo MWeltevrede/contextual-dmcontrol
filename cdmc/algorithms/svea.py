@@ -3,8 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from copy import deepcopy
-import utils
-import augmentations
+import cdmc.utils as utils
+import cdmc.augmentations as augmentations
 import algorithms.modules as m
 from algorithms.sac import SAC
 

@@ -22,7 +22,7 @@ import collections
 from dm_control.rl import control
 import numpy as np
 
-import utils
+import cdmc.utils as utils
 from dm_control.mujoco.wrapper import mjbindings
 
 DAVIS17_TRAINING_VIDEOS = [

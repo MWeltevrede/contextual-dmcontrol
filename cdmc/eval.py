@@ -3,14 +3,14 @@ import torchvision
 import os
 import numpy as np
 import gym
-import utils
+import cdmc.utils as utils
 from copy import deepcopy
 from tqdm import tqdm
-from arguments import parse_args
+from cdmc.arguments  import parse_args
 from env.wrappers import make_env
 from algorithms.factory import make_agent
-from video import VideoRecorder
-import augmentations
+from cdmc.video  import VideoRecorder
+import cdmc.augmentations as augmentations
 from pyvirtualdisplay import Display
 import json
 

@@ -5,3 +5,4 @@ cd ../dmc2gym
 pip install -e .
 
 cd ../../..
+pip install -e .

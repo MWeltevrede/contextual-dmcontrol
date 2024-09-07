@@ -1,4 +1,4 @@
-from arguments import parse_args
+from cdmc.arguments  import parse_args
 import json
 from pyvirtualdisplay import Display
 import torch
