@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
 import dmc2gym
-import utils
+import cdmc.utils as utils
 from collections import deque
 import dm_control
 
@@ -21,28 +21,28 @@ def make_env(
 		action_repeat=4,
 		image_size=100,
 		from_pixels=True,
-		states = [],
+		physics_seeds = [],
 		video_paths = [],
 		colors = [],
 		intensity=0.
 	):
 	"""Make environment for experiments"""
 	paths = []
-	env = dmc2gym.make(
-		domain_name=domain_name,
-		task_name=task_name,
-		seed=seed,
-		visualize_reward=False,
-		from_pixels=from_pixels,
-		height=image_size,
-		width=image_size,
-		episode_length=episode_length,
-		frame_skip=action_repeat,
-		is_distracting_cs=False,
-		distracting_cs_intensity=intensity,
-		background_dataset_paths=paths
-	)
-	env = dmc2gym.wrappers.ContextualDMCWrapper(env, states, seed=seed)
+	env_kwargs = {
+		"domain_name":domain_name,
+		"task_name":task_name,
+		"visualize_reward":False,
+		"from_pixels":from_pixels,
+		"height":image_size,
+		"width":image_size,
+		"episode_length":episode_length,
+		"frame_skip":action_repeat,
+		"is_distracting_cs":False,
+		"distracting_cs_intensity":intensity,
+		"background_dataset_paths":paths
+	}
+	env = dmc2gym.make(**env_kwargs, seed=seed)
+	env = dmc2gym.wrappers.ContextualDMCWrapper(env, physics_seeds, env_kwargs, seed=seed)
 	if from_pixels:
 		env = VideoWrapper(env, video_paths, seed=seed)
 		env = FrameStack(env, frame_stack)
@@ -66,9 +66,9 @@ class ColorWrapper(gym.Wrapper):
 		if self._num_colors > 0:
 			cdmc_env = self._get_contextual_dmc_wrapper()
 			video_env = self._get_video_wrapper()
-			if cdmc_env._num_physics_states > 0:
-				assert cdmc_env._num_physics_states == self._num_colors, 'number of physics states and colours must match'
-				self._randomised_color_indices = cdmc_env._randomised_state_indices
+			if cdmc_env._num_physics_seeds > 0:
+				assert cdmc_env._num_physics_seeds == self._num_colors, 'number of physics states and colours must match'
+				self._randomised_color_indices = cdmc_env._randomised_seed_indices
 			elif video_env._num_videos > 0:
 				assert video_env._num_videos == self._num_colors, 'number of videos and colours must match'
 				self._randomised_color_indices = video_env._randomised_video_indices
@@ -82,6 +82,7 @@ class ColorWrapper(gym.Wrapper):
 
 
 	def reset(self):
+		self._get_contextual_dmc_wrapper().before_reset()
 		self.time_step = 0
 		setting_kwargs = {}
 		if self._num_colors > 0:
@@ -270,9 +271,9 @@ class VideoWrapper(gym.Wrapper):
 
 		if self._num_videos > 0:
 			cdmc_env = self._get_contextual_dmc_wrapper()
-			if cdmc_env._num_physics_states > 0:
-				assert cdmc_env._num_physics_states == self._num_videos, 'number of physics states and colours must match'
-				self._randomised_video_indices = cdmc_env._randomised_state_indices
+			if cdmc_env._num_physics_seeds > 0:
+				assert cdmc_env._num_physics_seeds == self._num_videos, 'number of physics states and colours must match'
+				self._randomised_video_indices = cdmc_env._randomised_seed_indices
 			else:
 				# shuffle the order in which we encounter videos
 				random.seed(seed)
@@ -315,8 +316,9 @@ class VideoWrapper(gym.Wrapper):
 		return np.moveaxis(buf, -1, 1)
 
 	def _reset_video(self):
-		self._i = (self._i + 1) % self._num_videos
+		self._get_contextual_dmc_wrapper().before_reset()
 		self._data = self._load_video(self._video_paths[self._randomised_video_indices[self._i]])
+		self._i = (self._i + 1) % self._num_videos
 
 	def reset(self):
 		if self._num_videos > 0:

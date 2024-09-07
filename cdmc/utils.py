@@ -4,7 +4,7 @@ import os
 import glob
 import json
 import random
-import augmentations
+import cdmc.augmentations as augmentations
 import subprocess
 from datetime import datetime
 

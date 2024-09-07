@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import torchvision.transforms as TF
 import torchvision.datasets as datasets
 import kornia
-import utils
+import cdmc.utils as utils
 import os
 
 

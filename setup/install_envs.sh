@@ -1,4 +1,4 @@
-cd src/env/dm_control
+cd cdmc/env/dm_control
 pip install -e .
 
 cd ../dmc2gym
