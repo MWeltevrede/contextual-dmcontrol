@@ -60,7 +60,7 @@ def main(args):
 		action_repeat=args.action_repeat,
 		image_size=args.image_size,
 		intensity=args.distracting_cs_intensity,
-		states=np.array(contexts['states']),
+		physics_seeds=contexts['physics_seeds'],
 		video_paths=contexts['video_paths'],
 		colors=[dict([(k, np.array(v)) for k,v in color_dict.items()]) for color_dict in contexts['colors']],
 	)
