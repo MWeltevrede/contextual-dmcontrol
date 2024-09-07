@@ -29,7 +29,7 @@ class VideoRecorder(object):
                 _env = _env.env
             if 'video' in _env.__class__.__name__.lower():
                 frame = _env.apply_to(frame)
-                
+            
             self.frames.append(frame)
 
     def save(self, file_name):
