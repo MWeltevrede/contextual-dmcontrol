@@ -6,7 +6,7 @@ It is adapted to allow for direct control of the _contexts_ by supplying at the 
 
 The DMControl Generalization Benchmark provides full control for creating benchmarks for visual generalization to random colors, video backgrounds and initial states.
 
-Example colors and video backgrounds can be found in ```src/env/data/``` and ```src/generate_contexts.py``` shows an example of how to create training and testing sets.
+Example colors and video backgrounds can be found in ```cdmc/env/data/``` and ```cdmc/generate_contexts.py``` shows an example of how to create training and testing sets.
 
 Using an empty context set (in ```empty.json```) will run on the default colors and background and sample initial physics states from the full distribution (default DMC behaviour). 
 
@@ -45,7 +45,7 @@ Part of this repository relies on external datasets. SODA uses the [Places](http
 wget http://data.csail.mit.edu/places/places365/places365standard_easyformat.tar
 ```
 
-The `video_easy` data was proposed in [PAD](https://github.com/nicklashansen/policy-adaptation-during-deployment), and the `video_hard` data uses a subset of the [RealEstate10K](https://google.github.io/realestate10k/) dataset for background rendering. All test environments (including video files) are included in this repository, namely in the `src/env/` directory.
+The `video_easy` data was proposed in [PAD](https://github.com/nicklashansen/policy-adaptation-during-deployment), and the `video_hard` data uses a subset of the [RealEstate10K](https://google.github.io/realestate10k/) dataset for background rendering. All test environments (including video files) are included in this repository, namely in the `cdmc/env/` directory.
 
 
 ## Training & Evaluation
@@ -53,7 +53,7 @@ The `video_easy` data was proposed in [PAD](https://github.com/nicklashansen/pol
 The `scripts` directory contains training and evaluation bash scripts for all the included algorithms. Alternatively, you can call the python scripts directly, e.g. for training call
 
 ```
-python3 src/train.py \
+python3 cdmc/train.py \
   --algorithm sac \
   --seed 0 \
   --train_context_file empty.json \

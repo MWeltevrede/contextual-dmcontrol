@@ -19,9 +19,9 @@ with Display() as disp:
 			colors=[]
 		)
 	
-	all_colors = torch.load(f'src/env/data/color_hard.pt')
+	all_colors = torch.load(f'cdmc/env/data/color_hard.pt')
 	num_colors = len(all_colors)
-	all_video_paths = [f'src/env/data/video_hard/video{i}.mp4' for i in range(100)]
+	all_video_paths = [f'cdmc/env/data/video_hard/video{i}.mp4' for i in range(100)]
 	num_video_paths = len(all_video_paths)
 
 	# generate physics states by resetting the original DMC env

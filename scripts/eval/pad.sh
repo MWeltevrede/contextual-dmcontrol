@@ -1,4 +1,4 @@
-CUDA_VISIBLE_DEVICES=0 python3 src/eval.py \
+CUDA_VISIBLE_DEVICES=0 python3 cdmc/eval.py \
 	--algorithm pad \
 	--num_shared_layers 8 \
 	--num_head_layers 3 \
