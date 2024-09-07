@@ -5,6 +5,7 @@ from dm_env import specs
 import dm_env
 import numpy as np
 import random
+from dmc2gym import make
 
 
 def _spec_to_box(spec):
@@ -38,19 +39,28 @@ def _flatten_obs(obs):
 
 class ContextualDMCWrapper(gym.Wrapper):
     """Wrapper for initialising DMC with a set of physics states"""
-    def __init__(self, env, physics_states, seed=0):
+    def __init__(self, env, physics_states, env_kwargs, seed=0):
         gym.Wrapper.__init__(self, env)
         self._max_episode_steps = env._max_episode_steps
+        self._env_kwargs = env_kwargs
+        self._before_reset_performed = False
 
-        self._num_physics_states = len(physics_states)
-        if self._num_physics_states > 0:
-            self._physics_states = physics_states
+        if isinstance(physics_states, int):
+            self._initial_seed = physics_states
             self._i = 0
+            self._unbounded_states = True
+            self._num_physics_states = 0
+        else:
+            self._num_physics_states = len(physics_states)
+            if self._num_physics_states > 0:
+                self._physics_states = physics_states
+                self._i = 0
 
-            # shuffle the order in which we encounter physics states 
-            random.seed(seed)
-            self._randomised_state_indices = np.arange(self._num_physics_states)
-            random.shuffle(self._randomised_state_indices)
+                # shuffle the order in which we encounter physics states 
+                random.seed(seed)
+                self._randomised_state_indices = np.arange(self._num_physics_states)
+                random.shuffle(self._randomised_state_indices)
+            self._unbounded_states = False
 
         assert isinstance(self._get_dmc_wrapper(), DMCWrapper), 'wrapped env must be a DMCWrapper'
 
@@ -61,35 +71,55 @@ class ContextualDMCWrapper(gym.Wrapper):
         assert isinstance(_env, DMCWrapper), 'environment is not dmc2gym-wrapped'
 
         return _env
+    
+    def before_reset(self):
+        if not self._before_reset_performed:
+            if self._unbounded_states:
+                current_seed = self._initial_seed + self._i
+                self.env = make(**self._env_kwargs, seed=current_seed)
+            else:
+                if self._num_physics_states > 0:
+                    # reset environment to reset timestep counters and other things
+                    new_physics_seed, _ = self._physics_states[self._randomised_state_indices[self._i]]
+                    self.env = make(**self._env_kwargs, seed=new_physics_seed)
+            self._before_reset_performed = True
 
     def reset(self):
-        if self._num_physics_states > 0:
-            # reset environment to reset timestep counters and other things
-            self.env.reset()
-
-            dmc_env = self._get_dmc_wrapper()
-
-            # change the physics engine's state
-            new_physics_state = self._physics_states[self._randomised_state_indices[self._i]]
-            physics_engine = dmc_env._env._physics
-            physics_engine.set_state(new_physics_state)
-            physics_engine.after_reset()
-
-            # set correct Mujoco state and generate observation
-            time_step = dm_env.TimeStep(
-                dm_env.StepType.FIRST, 
-                None, 
-                None, 
-                dmc_env._env._task.get_observation(physics_engine)
-            )
-            dmc_env.current_state = _flatten_obs(time_step.observation)
-            obs = dmc_env._get_obs(time_step)
-
-            self._i = (self._i + 1) % self._num_physics_states
-            return obs
-        else:
-            # fall back to normal DMC behaviour
+        if self._unbounded_states:
+            self.before_reset()
+            self._i += 1
+            self._before_reset_performed = False
             return self.env.reset()
+        else:
+            if self._num_physics_states > 0:
+                self.before_reset()
+                # reset environment to reset timestep counters and other things
+                _, new_physics_state = self._physics_states[self._randomised_state_indices[self._i]]
+                new_physics_state = np.array(new_physics_state)
+                self._i = (self._i + 1) % self._num_physics_states
+                self.env.reset()
+
+                dmc_env = self._get_dmc_wrapper()
+
+                # change the physics engine's state
+                physics_engine = dmc_env._env._physics
+                physics_engine.set_state(new_physics_state)
+                physics_engine.after_reset()
+
+                # set correct Mujoco state and generate observation
+                time_step = dm_env.TimeStep(
+                    dm_env.StepType.FIRST, 
+                    None, 
+                    None, 
+                    dmc_env._env._task.get_observation(dmc_env._env._physics)
+                )
+                dmc_env.current_state = _flatten_obs(time_step.observation)
+                obs = dmc_env._get_obs(time_step)
+                self._before_reset_performed = False
+                return obs
+            else:
+                # fall back to normal DMC behaviour
+                return self.env.reset()
 
 
 class DMCWrapper(core.Env):

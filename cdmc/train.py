@@ -5,11 +5,11 @@ import gym
 import cdmc.utils as utils
 import time
 import json
-from cdmc.arguments  import parse_args
+from cdmc.arguments import parse_args
 from env.wrappers import make_env
 from algorithms.factory import make_agent
-from cdmc.logger  import Logger
-from cdmc.video  import VideoRecorder
+from cdmc.logger import Logger
+from cdmc.video import VideoRecorder
 from pyvirtualdisplay import Display
 import wandb
 
@@ -55,7 +55,7 @@ def main(args):
 		episode_length=args.episode_length,
 		action_repeat=args.action_repeat,
 		image_size=args.image_size,
-		states=np.array(train_contexts['states']),
+		states=train_contexts['states'],
 		video_paths=train_contexts['video_paths'],
 		colors=[dict([(k, np.array(v)) for k,v in color_dict.items()]) for color_dict in train_contexts['colors']],
 	)
@@ -66,7 +66,7 @@ def main(args):
 		episode_length=args.episode_length,
 		action_repeat=args.action_repeat,
 		image_size=args.image_size,
-		states=np.array(test_contexts['states']),
+		states=test_contexts['states'],
 		video_paths=test_contexts['video_paths'],
 		colors=[dict([(k, np.array(v)) for k,v in color_dict.items()]) for color_dict in test_contexts['colors']],
 	)
@@ -168,7 +168,7 @@ if __name__ == '__main__':
 	args_dict = vars(args)
 	with open(args.train_context_file, 'r') as file:
 		contexts = json.load(file)
-		args_dict['num_contexts'] = max(max(len(contexts['states']), len(contexts['video_paths'])), len(contexts['colors']))
+		args_dict['num_contexts'] = max(max(len(contexts['states']) if isinstance(contexts['states'], list) else 0, len(contexts['video_paths'])), len(contexts['colors']))
 	with wandb.init(project=wandb_project, entity=lines[1], config=args_dict, tags=[args.algorithm, args.domain_name, args.task_name]):
 		with Display() as disp:
 			main(args)

@@ -28,21 +28,21 @@ def make_env(
 	):
 	"""Make environment for experiments"""
 	paths = []
-	env = dmc2gym.make(
-		domain_name=domain_name,
-		task_name=task_name,
-		seed=seed,
-		visualize_reward=False,
-		from_pixels=from_pixels,
-		height=image_size,
-		width=image_size,
-		episode_length=episode_length,
-		frame_skip=action_repeat,
-		is_distracting_cs=False,
-		distracting_cs_intensity=intensity,
-		background_dataset_paths=paths
-	)
-	env = dmc2gym.wrappers.ContextualDMCWrapper(env, states, seed=seed)
+	env_kwargs = {
+		"domain_name":domain_name,
+		"task_name":task_name,
+		"visualize_reward":False,
+		"from_pixels":from_pixels,
+		"height":image_size,
+		"width":image_size,
+		"episode_length":episode_length,
+		"frame_skip":action_repeat,
+		"is_distracting_cs":False,
+		"distracting_cs_intensity":intensity,
+		"background_dataset_paths":paths
+	}
+	env = dmc2gym.make(**env_kwargs, seed=seed)
+	env = dmc2gym.wrappers.ContextualDMCWrapper(env, states, env_kwargs, seed=seed)
 	if from_pixels:
 		env = VideoWrapper(env, video_paths, seed=seed)
 		env = FrameStack(env, frame_stack)
@@ -82,6 +82,7 @@ class ColorWrapper(gym.Wrapper):
 
 
 	def reset(self):
+		self._get_contextual_dmc_wrapper().before_reset()
 		self.time_step = 0
 		setting_kwargs = {}
 		if self._num_colors > 0:
@@ -315,8 +316,9 @@ class VideoWrapper(gym.Wrapper):
 		return np.moveaxis(buf, -1, 1)
 
 	def _reset_video(self):
-		self._i = (self._i + 1) % self._num_videos
+		self._get_contextual_dmc_wrapper().before_reset()
 		self._data = self._load_video(self._video_paths[self._randomised_video_indices[self._i]])
+		self._i = (self._i + 1) % self._num_videos
 
 	def reset(self):
 		if self._num_videos > 0:
