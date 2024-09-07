@@ -15,7 +15,7 @@ class VideoRecorder(object):
         self.frames = []
         self.enabled = self.dir_name is not None and enabled
 
-    def record(self, env, video_mode=False):
+    def record(self, env):
         if self.enabled:
             frame = env.render(
                 mode='rgb_array',
@@ -23,11 +23,13 @@ class VideoRecorder(object):
                 width=self.width,
                 camera_id=self.camera_id
             )
-            if video_mode:
-                _env = env
-                while 'video' not in _env.__class__.__name__.lower():
-                    _env = _env.env
+
+            _env = env
+            while 'video' not in _env.__class__.__name__.lower() and hasattr(_env, 'env'):
+                _env = _env.env
+            if 'video' in _env.__class__.__name__.lower():
                 frame = _env.apply_to(frame)
+                
             self.frames.append(frame)
 
     def save(self, file_name):
