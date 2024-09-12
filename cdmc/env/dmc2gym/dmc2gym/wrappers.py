@@ -46,7 +46,7 @@ class ContextualDMCWrapper(gym.Wrapper):
         self._before_reset_performed = False
 
         if isinstance(physics_states, int):
-            self._initial_seed = physics_states
+            self._initial_seed = physics_states + 1000*seed
             self._i = 0
             self._unbounded_states = True
             self._num_physics_states = 0
