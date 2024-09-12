@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from copy import deepcopy
 import cdmc.utils as utils
 import cdmc.augmentations as augmentations
-import algorithms.modules as m
+import cdmc.algorithms.modules as m
 from cdmc.algorithms.sac import SAC
 
 

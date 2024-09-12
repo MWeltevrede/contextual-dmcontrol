@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from copy import deepcopy
 import cdmc.utils as utils
-import algorithms.modules as m
+import cdmc.algorithms.modules as m
 
 
 class SAC(object):
