@@ -47,7 +47,7 @@ def set_seed_everywhere(seed):
 def write_info(args, fp):
     data = {
         'timestamp': str(datetime.now()),
-        'git': subprocess.check_output(["git", "describe", "--always"]).strip().decode(),
+        # 'git': subprocess.check_output(["git", "describe", "--always"]).strip().decode(),
         'args': vars(args)
     }
     with open(fp, 'w') as f:
