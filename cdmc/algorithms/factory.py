@@ -1,10 +1,10 @@
-from algorithms.sac import SAC
-from algorithms.rad import RAD
-from algorithms.curl import CURL
-from algorithms.pad import PAD
-from algorithms.soda import SODA
-from algorithms.drq import DrQ
-from algorithms.svea import SVEA
+from cdmc.algorithms.sac import SAC
+from cdmc.algorithms.rad import RAD
+from cdmc.algorithms.curl import CURL
+from cdmc.algorithms.pad import PAD
+from cdmc.algorithms.soda import SODA
+from cdmc.algorithms.drq import DrQ
+from cdmc.algorithms.svea import SVEA
 
 algorithm = {
 	'sac': SAC,

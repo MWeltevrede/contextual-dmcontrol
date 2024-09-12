@@ -6,7 +6,7 @@ from copy import deepcopy
 import cdmc.utils as utils
 import cdmc.augmentations as augmentations
 import algorithms.modules as m
-from algorithms.sac import SAC
+from cdmc.algorithms.sac import SAC
 
 
 class SVEA(SAC):

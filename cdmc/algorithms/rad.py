@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from copy import deepcopy
 import cdmc.utils as utils
 import algorithms.modules as m
-from algorithms.sac import SAC
+from cdmc.algorithms.sac import SAC
 
 
 class RAD(SAC):

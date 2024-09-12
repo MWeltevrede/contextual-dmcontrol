@@ -27,10 +27,10 @@ try:
 except ImportError:
   suite = None
 
-from env.distracting_control import background
-from env.distracting_control import camera
-from env.distracting_control import color
-from env.distracting_control import suite_utils
+from cdmc.env.distracting_control import background
+from cdmc.env.distracting_control import camera
+from cdmc.env.distracting_control import color
+from cdmc.env.distracting_control import suite_utils
 
 
 def is_available():

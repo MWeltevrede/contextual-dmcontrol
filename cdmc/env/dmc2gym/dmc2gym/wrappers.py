@@ -156,7 +156,7 @@ class DMCWrapper(core.Env):
 
         # create task
         if is_distracting_cs:
-            from env.distracting_control import suite as dc_suite
+            from cdmc.env.distracting_control import suite as dc_suite
             self._env = dc_suite.load(
                 domain_name,
                 task_name,
