@@ -169,6 +169,8 @@ if __name__ == '__main__':
 	with open(args.train_context_file, 'r') as file:
 		contexts = json.load(file)
 		args_dict['num_contexts'] = max(max(len(contexts['states']) if isinstance(contexts['states'], list) else 0, len(contexts['video_paths'])), len(contexts['colors']))
+		train_context_name_short = os.path.split(args.train_context_file)[-1]
+		args_dict['train_context_name_short'] = '_'.join(train_context_name_short.split('_')[:-1])
 	with wandb.init(project=wandb_project, entity=lines[1], config=args_dict, tags=[args.algorithm, args.domain_name, args.task_name]):
 		with Display() as disp:
 			main(args)
