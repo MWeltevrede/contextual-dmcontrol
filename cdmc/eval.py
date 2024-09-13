@@ -15,7 +15,7 @@ from pyvirtualdisplay import Display
 import json
 
 
-def evaluate(env, agent, video, num_episodes, video_mode, adapt=False):
+def evaluate(env, agent, video, num_episodes, adapt=False):
 	episode_rewards = []
 	for i in tqdm(range(num_episodes)):
 		if adapt:
@@ -31,7 +31,7 @@ def evaluate(env, agent, video, num_episodes, video_mode, adapt=False):
 			with utils.eval_mode(ep_agent):
 				action = ep_agent.select_action(obs)
 			next_obs, reward, done, _ = env.step(action)
-			video.record(env, video_mode)
+			video.record(env)
 			episode_reward += reward
 			if adapt:
 				ep_agent.update_inverse_dynamics(*augmentations.prepare_pad_batch(obs, next_obs, action))
@@ -59,14 +59,13 @@ def main(args):
 		episode_length=args.episode_length,
 		action_repeat=args.action_repeat,
 		image_size=args.image_size,
-		intensity=args.distracting_cs_intensity,
 		states=contexts['states'],
 		video_paths=contexts['video_paths'],
 		colors=[dict([(k, np.array(v)) for k,v in color_dict.items()]) for color_dict in contexts['colors']],
 	)
 
 	# Set working directory
-	work_dir = os.path.join(args.log_dir, args.domain_name+'_'+args.task_name, args.algorithm, args.context_file[:-5], str(args.seed))
+	work_dir = os.path.join(args.log_dir, args.domain_name+'_'+args.task_name, args.algorithm, os.path.split(args.train_context_file)[-1][:-5], str(args.seed))
 	print('Working directory:', work_dir)
 	assert os.path.exists(work_dir), 'specified working directory does not exist'
 	model_dir = utils.make_dir(os.path.join(work_dir, 'model'))
@@ -91,7 +90,7 @@ def main(args):
 	agent.train(False)
 
 	print(f'\nEvaluating {work_dir} for {args.eval_episodes} episodes')
-	reward = evaluate(env, agent, video, args.eval_episodes, video_mode)
+	reward = evaluate(env, agent, video, args.eval_episodes)
 	print('Reward:', int(reward))
 
 	adapt_reward = None
@@ -103,7 +102,7 @@ def main(args):
 			episode_length=args.episode_length,
 			action_repeat=args.action_repeat,
 		)
-		adapt_reward = evaluate(env, agent, video, args.eval_episodes, video_mode, adapt=True)
+		adapt_reward = evaluate(env, agent, video, args.eval_episodes, adapt=True)
 		print('Adapt reward:', int(adapt_reward))
 
 	# Save results
