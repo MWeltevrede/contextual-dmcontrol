@@ -128,6 +128,7 @@ def main(args):
 			episode_reward = 0
 			episode_step = 0
 			episode += 1
+			num_pure_expl_steps = np.random.randint(0, args.max_pure_expl_steps+1)
 
 			L.log('train/episode', episode, step)
 
@@ -135,21 +136,27 @@ def main(args):
 		if step < args.init_steps:
 			action = env.action_space.sample()
 		else:
-			with utils.eval_mode(agent):
-				action = agent.sample_action(obs)
+			if episode_step < num_pure_expl_steps:
+				# In the pure exploration phase, move around randomly
+				action = env.action_space.sample()
+			else:
+				with utils.eval_mode(agent):
+					action = agent.sample_action(obs)
 
-		# Run training update
-		if step == args.init_steps:
-			for i in range(1, args.init_steps + 1):
-				agent.update(replay_buffer, L, i)	
-		elif step > args.init_steps:
-			agent.update(replay_buffer, L, step)
+		if episode_step >= num_pure_expl_steps or step == args.init_steps:
+			# Run training update
+			if step == args.init_steps:
+				for i in range(1, args.init_steps + 1):
+					agent.update(replay_buffer, L, i)	
+			elif step > args.init_steps:
+				agent.update(replay_buffer, L, step)
 
 		# Take step
 		next_obs, reward, done, _ = env.step(action)
 		done_bool = 0 if episode_step + 1 == env._max_episode_steps else float(done)
-		replay_buffer.add(obs, action, reward, next_obs, done_bool)
-		episode_reward += reward
+		if episode_step >= num_pure_expl_steps or step < args.init_steps:
+			replay_buffer.add(obs, action, reward, next_obs, done_bool)
+			episode_reward += reward
 		obs = next_obs
 
 		episode_step += 1
