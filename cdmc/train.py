@@ -128,7 +128,7 @@ def main(args):
 			episode_reward = 0
 			episode_step = 0
 			episode += 1
-			num_pure_expl_steps = np.random.randint(0, args.max_pure_expl_steps+1)
+			num_pure_expl_steps = np.random.randint(0, (args.max_pure_expl_steps // args.action_repeat)+1)
 
 			L.log('train/episode', episode, step)
 
