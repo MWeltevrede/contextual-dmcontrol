@@ -72,7 +72,7 @@ def main(args):
 	)
 	print("after making envs")
 	# Create working directory
-	work_dir = os.path.join(args.log_dir, args.domain_name+'_'+args.task_name, args.algorithm, os.path.split(args.train_context_file)[-1][:-5], str(args.seed))
+	work_dir = os.path.join(args.log_dir, args.domain_name+'_'+args.task_name, args.algorithm, os.path.split(args.train_context_file)[-1][:-5], str(args.max_pure_expl_steps), str(args.seed))
 	print('Working directory:', work_dir)
 	assert not os.path.exists(os.path.join(work_dir, 'train.log')), 'specified working directory already exists'
 	utils.make_dir(work_dir)
