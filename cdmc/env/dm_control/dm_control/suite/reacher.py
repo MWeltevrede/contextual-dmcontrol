@@ -111,6 +111,10 @@ class Reacher(base.Task):
     obs['velocity'] = physics.velocity()
     return obs
 
+  def get_termination(self, physics):
+    radii = physics.named.model.geom_size[['target', 'finger'], 0].sum()
+    return 1.0 if rewards.tolerance(physics.finger_to_target_dist(), (0, radii)) == 1 else None
+  
   def get_reward(self, physics):
     radii = physics.named.model.geom_size[['target', 'finger'], 0].sum()
     return rewards.tolerance(physics.finger_to_target_dist(), (0, radii))

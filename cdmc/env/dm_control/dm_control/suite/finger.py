@@ -198,6 +198,9 @@ class Turn(base.Task):
     obs['target_position'] = physics.target_position()
     obs['dist_to_target'] = physics.dist_to_target()
     return obs
+  
+  def get_termination(self, physics):
+    return 1.0 if physics.dist_to_target() <= 0 else None
 
   def get_reward(self, physics):
     return float(physics.dist_to_target() <= 0)
