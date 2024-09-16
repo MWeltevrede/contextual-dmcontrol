@@ -108,19 +108,6 @@ def main(args):
 				start_time = time.time()
 				L.dump(step)
 
-			# Evaluate agent periodically
-			if step % args.eval_freq == 0:
-				print('Evaluating:', work_dir)
-				L.log('eval/episode', episode, step)
-				evaluate(env, agent, video, args.eval_episodes, L, step)
-				if test_env is not None:
-					evaluate(test_env, agent, video, args.eval_episodes, L, step, test_env=True)
-				L.dump(step)
-
-			# Save agent periodically
-			if step > start_step and step % args.save_freq == 0:
-				torch.save(agent, os.path.join(model_dir, f'{step}.pt'))
-
 			L.log('train/episode_reward', episode_reward, step)
 
 			obs = env.reset()
@@ -131,6 +118,19 @@ def main(args):
 			num_pure_expl_steps = np.random.randint(0, (args.max_pure_expl_steps // args.action_repeat)+1)
 
 			L.log('train/episode', episode, step)
+
+		# Evaluate agent periodically
+		if step % args.eval_freq == 0:
+			print('Evaluating:', work_dir)
+			L.log('eval/episode', episode, step)
+			evaluate(env, agent, video, args.eval_episodes, L, step)
+			if test_env is not None:
+				evaluate(test_env, agent, video, args.eval_episodes, L, step, test_env=True)
+			L.dump(step)
+
+		# Save agent periodically
+		if step > start_step and step % args.save_freq == 0:
+			torch.save(agent, os.path.join(model_dir, f'{step}.pt'))
 
 		# Sample action for data collection
 		if step < args.init_steps:
