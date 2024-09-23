@@ -74,9 +74,17 @@ def main(args):
 	# Create working directory
 	work_dir = os.path.join(args.log_dir, args.domain_name+'_'+args.task_name, args.algorithm, os.path.split(args.train_context_file)[-1][:-5], str(args.max_pure_expl_steps), str(args.seed))
 	print('Working directory:', work_dir)
-	assert not os.path.exists(os.path.join(work_dir, 'train.log')), 'specified working directory already exists'
 	utils.make_dir(work_dir)
 	model_dir = utils.make_dir(os.path.join(work_dir, 'model'))
+	if os.path.exists(os.path.join(work_dir, 'train.log')):
+		assert os.path.exists(os.path.join(model_dir, 'buffer.npz')), 'specified working directory already exists and no buffer can be found'
+		assert not os.path.exists(os.path.join(model_dir, str(args.train_steps) + '.pt')), 'agent already trained'
+		for cp in range(args.train_steps - args.save_freq, 0, -args.save_freq):
+			if os.path.exists(os.path.join(model_dir, str(cp) + '.pt')):
+				break
+	else:
+		cp = None
+
 	video_dir = utils.make_dir(os.path.join(work_dir, 'video'))
 	video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
 	utils.write_info(args, os.path.join(work_dir, 'info.log'))
@@ -99,6 +107,11 @@ def main(args):
 	)
 
 	start_step, episode, episode_reward, done = 0, 0, 0, True
+	if cp is not None:
+		agent = torch.load(os.path.join(model_dir, str(cp) +'.pt'))
+		replay_buffer.load(model_dir)
+		start_step = cp
+		episode = cp / (args.episode_length // args.action_repeat)
 	L = Logger(work_dir)
 	start_time = time.time()
 	for step in range(start_step, args.train_steps+1):
@@ -120,6 +133,7 @@ def main(args):
 			# Save agent periodically
 			if step > start_step and step % args.save_freq == 0:
 				torch.save(agent, os.path.join(model_dir, f'{step}.pt'))
+				replay_buffer.save(model_dir)
 
 			L.log('train/episode_reward', episode_reward, step)
 

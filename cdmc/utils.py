@@ -7,6 +7,7 @@ import random
 import cdmc.augmentations as augmentations
 import subprocess
 from datetime import datetime
+import dill
 
 
 class eval_mode(object):
@@ -117,6 +118,19 @@ class ReplayBuffer(object):
 
         self.idx = (self.idx + 1) % self.capacity
         self.full = self.full or self.idx == 0
+
+    def save(self, file_name):
+        np.savez_compressed(file_name + "/obses", obses=np.array(self._obses, dtype=object))
+        np.savez_compressed(file_name + "/buffer", actions=self.actions, rewards=self.rewards, not_dones=self.not_dones, idx=np.array(self.idx), full=np.array(self.full))
+
+    def load(self, file_name):
+        buffer_data = np.load(file_name + "/buffer.npz", allow_pickle=True)
+        self._obses = [obss for obss in np.load(file_name + "/obses.npz", allow_pickle=True)['obses']]
+        self.actions = buffer_data['actions']
+        self.rewards = buffer_data['rewards']
+        self.not_dones = buffer_data['not_dones']
+        self.idx = buffer_data['idx'].item()
+        self.full = buffer_data['full'].item()
 
     def _get_idxs(self, n=None):
         if n is None:
