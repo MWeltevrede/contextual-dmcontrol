@@ -73,7 +73,7 @@ def main(args):
 	video = VideoRecorder(video_dir if args.save_video else None, height=448, width=448)
 
 	# Check if evaluation has already been run
-	results_fp = os.path.join(work_dir, 'eval.pt')
+	results_fp = os.path.join(work_dir, f'eval_{args.train_steps}.pt')
 	assert not os.path.exists(results_fp), f'results already exist for {work_dir}'
 
 	# Prepare agent
