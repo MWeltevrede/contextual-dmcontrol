@@ -115,7 +115,7 @@ class EnvironmentTest(parameterized.TestCase):
 
   def test_flatten_observations(self):
     multimodal_obs = dict(_CONSTANT_OBSERVATION)
-    multimodal_obs['sensor'] = np.zeros(7, dtype=np.bool)
+    multimodal_obs['sensor'] = np.zeros(7, dtype=bool)
     self._task.get_observation = mock.Mock(return_value=multimodal_obs)
     env = control.Environment(
         physics=self._physics, task=self._task, flat_observation=True)
