@@ -169,9 +169,9 @@ class UpdaterTest(parameterized.TestCase):
     observation_updater.reset(physics=physics, random_state=None)
 
     spec = observation_updater.observation_spec()
-    self.assertCorrectSpec(spec['repeated'], (5, 2), np.int, 'repeated')
-    self.assertCorrectSpec(spec['matrix'], (4, 2, 3), np.int, 'matrix')
-    self.assertCorrectSpec(spec['sqrt'], (3,), np.float, 'sqrt')
+    self.assertCorrectSpec(spec['repeated'], (5, 2), int, 'repeated')
+    self.assertCorrectSpec(spec['matrix'], (4, 2, 3), int, 'matrix')
+    self.assertCorrectSpec(spec['sqrt'], (3,), float, 'sqrt')
 
   def testObservation(self):
     physics = fake_physics.FakePhysics()

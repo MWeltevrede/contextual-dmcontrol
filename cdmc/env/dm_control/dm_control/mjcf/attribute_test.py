@@ -184,7 +184,7 @@ class AttributeTest(parameterized.TestCase):
     mujoco = self._mujoco
     mujoco.optional.float_array = [3, 2, 1]
     np.testing.assert_array_equal(mujoco.optional.float_array, [3, 2, 1])
-    self.assertEqual(mujoco.optional.float_array.dtype, np.float)
+    self.assertEqual(mujoco.optional.float_array.dtype, float)
     with six.assertRaisesRegex(self, ValueError, 'no more than 3 entries'):
       mujoco.optional.float_array = [0, 0, 0, -10]
     with six.assertRaisesRegex(self, ValueError, 'one-dimensional array'):
@@ -214,7 +214,7 @@ class AttributeTest(parameterized.TestCase):
     mujoco = self._mujoco
     mujoco.optional.int_array = [2, 2]
     np.testing.assert_array_equal(mujoco.optional.int_array, [2, 2])
-    self.assertEqual(mujoco.optional.int_array.dtype, np.int)
+    self.assertEqual(mujoco.optional.int_array.dtype, int)
     with six.assertRaisesRegex(self, ValueError, 'no more than 2 entries'):
       mujoco.optional.int_array = [0, 0, 10]
     # failed assignment should not change the value

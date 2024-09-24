@@ -431,7 +431,7 @@ class MujocoEngineTest(parameterized.TestCase):
     """
     physics = engine.Physics.from_xml_string(xml)
     spec = engine.action_spec(physics)
-    self.assertEqual(np.float, spec.dtype)
+    self.assertEqual(float, spec.dtype)
     np.testing.assert_array_equal(spec.minimum, [-np.inf, -1.0])
     np.testing.assert_array_equal(spec.maximum, [np.inf, 2.0])
 

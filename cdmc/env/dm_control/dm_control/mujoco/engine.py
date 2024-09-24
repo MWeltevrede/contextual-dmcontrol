@@ -896,9 +896,9 @@ def action_spec(physics):
   num_actions = physics.model.nu
   is_limited = physics.model.actuator_ctrllimited.ravel().astype(bool)
   control_range = physics.model.actuator_ctrlrange
-  minima = np.full(num_actions, fill_value=-np.inf, dtype=np.float)
-  maxima = np.full(num_actions, fill_value=np.inf, dtype=np.float)
+  minima = np.full(num_actions, fill_value=-np.inf, dtype=float)
+  maxima = np.full(num_actions, fill_value=np.inf, dtype=float)
   minima[is_limited], maxima[is_limited] = control_range[is_limited].T
 
   return specs.BoundedArray(
-      shape=(num_actions,), dtype=np.float, minimum=minima, maximum=maxima)
+      shape=(num_actions,), dtype=float, minimum=minima, maximum=maxima)

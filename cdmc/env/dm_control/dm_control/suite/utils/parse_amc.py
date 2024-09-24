@@ -128,7 +128,7 @@ def parse(file_name):
       while True:
         line = fid.readline().strip()
         if not line or line == str(frame_ind):
-          values.append(np.array(frame_vals, dtype=np.float))
+          values.append(np.array(frame_vals, dtype=float))
           break
         tokens = line.split()
         frame_vals.extend(tokens[1:])
@@ -139,7 +139,7 @@ def parse(file_name):
       while True:
         line = fid.readline().strip()
         if not line or line == str(frame_ind):
-          values.append(np.array(frame_vals, dtype=np.float))
+          values.append(np.array(frame_vals, dtype=float))
           break
         tokens = line.split()
         frame_vals.extend(tokens[1:])

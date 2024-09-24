@@ -34,8 +34,8 @@ _CONSTANT_REWARD_VALUE = 1.0
 _CONSTANT_OBSERVATION = {'observations': np.asarray(_CONSTANT_REWARD_VALUE)}
 
 _ACTION_SPEC = specs.BoundedArray(
-    shape=(1,), dtype=np.float, minimum=0.0, maximum=1.0)
-_OBSERVATION_SPEC = {'observations': specs.Array(shape=(), dtype=np.float)}
+    shape=(1,), dtype=float, minimum=0.0, maximum=1.0)
+_OBSERVATION_SPEC = {'observations': specs.Array(shape=(), dtype=float)}
 
 
 class EnvironmentTest(parameterized.TestCase):
