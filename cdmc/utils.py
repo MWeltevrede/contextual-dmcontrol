@@ -95,9 +95,11 @@ class ReplayBuffer(object):
         self.capacity = capacity
         self.batch_size = batch_size
 
-        self._obses = []
-        if prefill:
-            self._obses = prefill_memory(self._obses, capacity, obs_shape)
+        # self._obses = []
+        # if prefill:
+        #     self._obses = prefill_memory(self._obses, capacity, obs_shape)
+        self.obs = np.empty((capacity, *obs_shape), dtype=np.uint8)
+        self.next_obs = np.empty((capacity, *obs_shape), dtype=np.uint8)
         self.actions = np.empty((capacity, *action_shape), dtype=np.float32)
         self.rewards = np.empty((capacity, 1), dtype=np.float32)
         self.not_dones = np.empty((capacity, 1), dtype=np.float32)
@@ -106,11 +108,13 @@ class ReplayBuffer(object):
         self.full = False
 
     def add(self, obs, action, reward, next_obs, done):
-        obses = (obs, next_obs)
-        if self.idx >= len(self._obses):
-            self._obses.append(obses)
-        else:
-            self._obses[self.idx] = (obses)
+        # obses = (obs, next_obs)
+        # if self.idx >= len(self._obses):
+        #     self._obses.append(obses)
+        # else:
+        #     self._obses[self.idx] = (obses)
+        np.copyto(self.obs[self.idx], obs)
+        np.copyto(self.next_obs[self.idx], next_obs)
         np.copyto(self.actions[self.idx], action)
         np.copyto(self.rewards[self.idx], reward)
         np.copyto(self.not_dones[self.idx], not done)
@@ -119,12 +123,12 @@ class ReplayBuffer(object):
         self.full = self.full or self.idx == 0
 
     def save(self, file_name):
-        np.savez_compressed(file_name + "/obses", obses=np.array(self._obses, dtype=object))
-        np.savez_compressed(file_name + "/buffer", actions=self.actions, rewards=self.rewards, not_dones=self.not_dones, idx=np.array(self.idx), full=np.array(self.full))
+        np.savez_compressed(file_name + "/buffer", obs=self.obs, next_obs=self.next_obs, actions=self.actions, rewards=self.rewards, not_dones=self.not_dones, idx=np.array(self.idx), full=np.array(self.full))
 
     def load(self, file_name):
         buffer_data = np.load(file_name + "/buffer.npz", allow_pickle=True)
-        self._obses = [obss for obss in np.load(file_name + "/obses.npz", allow_pickle=True)['obses']]
+        self.obs = buffer_data['obs']
+        self.next_obs = buffer_data['next_obs']
         self.actions = buffer_data['actions']
         self.rewards = buffer_data['rewards']
         self.not_dones = buffer_data['not_dones']
@@ -138,25 +142,16 @@ class ReplayBuffer(object):
             0, self.capacity if self.full else self.idx, size=n
         )
 
-    def _encode_obses(self, idxs):
-        obses, next_obses = [], []
-        for i in idxs:
-            obs, next_obs = self._obses[i]
-            obses.append(np.array(obs, copy=False))
-            next_obses.append(np.array(next_obs, copy=False))
-        return np.array(obses), np.array(next_obses)
-
     def sample_soda(self, n=None):
         idxs = self._get_idxs(n)
-        obs, _ = self._encode_obses(idxs)
+        obs = self.obs[idxs]
         return torch.as_tensor(obs).cuda().float()
 
     def __sample__(self, n=None):
         idxs = self._get_idxs(n)
 
-        obs, next_obs = self._encode_obses(idxs)
-        obs = torch.as_tensor(obs).cuda().float()
-        next_obs = torch.as_tensor(next_obs).cuda().float()
+        obs = torch.as_tensor(self.obs[idxs]).cuda().float()
+        next_obs = torch.as_tensor(self.next_obs[idxs]).cuda().float()
         actions = torch.as_tensor(self.actions[idxs]).cuda()
         rewards = torch.as_tensor(self.rewards[idxs]).cuda()
         not_dones = torch.as_tensor(self.not_dones[idxs]).cuda()
