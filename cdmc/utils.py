@@ -7,7 +7,6 @@ import random
 import cdmc.augmentations as augmentations
 import subprocess
 from datetime import datetime
-import dill
 
 
 class eval_mode(object):
