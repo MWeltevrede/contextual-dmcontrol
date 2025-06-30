@@ -1,5 +1,6 @@
 import torch
 import os
+os.environ['MUJOCO_GL'] = 'egl'
 import numpy as np
 import gym
 import cdmc.utils as utils
