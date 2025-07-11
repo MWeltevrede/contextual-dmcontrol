@@ -48,20 +48,29 @@ def trunc_normal_(tensor, mean=0., std=1., a=-2., b=2.):
 
 
 def weight_init(m):
-	"""Custom weight init for Conv2D and Linear layers"""
-	if isinstance(m, nn.Linear):
-		nn.init.orthogonal_(m.weight.data)
-		if hasattr(m.bias, 'data'):
-			m.bias.data.fill_(0.0)
-	elif isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
-		# delta-orthogonal init from https://arxiv.org/pdf/1806.05393.pdf
-		assert m.weight.size(2) == m.weight.size(3)
-		m.weight.data.fill_(0.0)
-		if hasattr(m.bias, 'data'):
-			m.bias.data.fill_(0.0)
-		mid = m.weight.size(2) // 2
-		gain = nn.init.calculate_gain('relu')
-		nn.init.orthogonal_(m.weight.data[:, :, mid, mid], gain)
+	"""Kaiming Uniform weight init for Conv2D and Linear layers"""
+	if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+		torch.nn.init.kaiming_uniform_(m.weight, a=math.sqrt(5))
+		if m.bias is not None:
+			fan_in, _ = torch.nn.init._calculate_fan_in_and_fan_out(m.weight)
+			if fan_in != 0:
+				bound = 1 / math.sqrt(fan_in)
+				torch.nn.init.uniform_(m.bias, -bound, bound)
+
+	#"""Custom weight init for Conv2D and Linear layers"""
+	#if isinstance(m, nn.Linear):
+	#	nn.init.orthogonal_(m.weight.data)
+	#	if hasattr(m.bias, 'data'):
+	#		m.bias.data.fill_(0.0)
+	#elif isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+	#	# delta-orthogonal init from https://arxiv.org/pdf/1806.05393.pdf
+	#	assert m.weight.size(2) == m.weight.size(3)
+	#	m.weight.data.fill_(0.0)
+	#	if hasattr(m.bias, 'data'):
+	#		m.bias.data.fill_(0.0)
+	#	mid = m.weight.size(2) // 2
+	#	gain = nn.init.calculate_gain('relu')
+	#	nn.init.orthogonal_(m.weight.data[:, :, mid, mid], gain)
 
 
 class CenterCrop(nn.Module):
