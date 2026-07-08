@@ -134,11 +134,15 @@ def main(args):
 
 		# Sample action for data collection
 		if step < args.init_steps:
-			action = env.action_space.sample()
+			#action = env.action_space.sample()
+			action = (np.random.rand(*env.action_space.shape) * (env.action_space.high - env.action_space.low)) + env.action_space.low
+			action = action.astype(np.float32)
 		else:
 			if episode_step < num_pure_expl_steps:
 				# In the pure exploration phase, move around randomly
-				action = env.action_space.sample()
+				#action = env.action_space.sample()
+				action = (np.random.rand(*env.action_space.shape) * (env.action_space.high - env.action_space.low)) + env.action_space.low
+				action = action.astype(np.float32)
 			else:
 				with utils.eval_mode(agent):
 					action = agent.sample_action(obs)
